@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Snake Xenzia 🐍</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link href="css/style.css" rel="stylesheet"> -->
+    <script src="https://kit.fontawesome.com/d7431438a4.js" crossorigin="anonymous"></script>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        /* height: 100%; */
+        background-color: rgb(250, 242, 231);
+    }
+
+    .wrapper {
+        border-radius: 10px;
+        width: 65vmin;
+        height: 70vmin;
+        background: rgb(35, 28, 69);
+        /* margin-top: -20px; */
+        /* margin-bottom: 10px; */
+    }
+
+    .game-details {
+        color: aliceblue;
+        font-size: 1.2rem;
+        font-weight: 500;
+        padding: 20px 27px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .play-board {
+        width: 100%;
+        height: 100%;
+        background-color: rgb(10, 10, 34);
+        display: grid;
+        grid-template: repeat(30, 1fr)/ repeat(30, 1fr);
+    }
+
+    .play-board .food {
+        background-color: red;
+        border-radius: 40%;
+    }
+
+    .play-board .head {
+        background-color: rgb(31, 145, 252);
+    }
+    .controls{
+        /* border-radiu: 10px; */
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        overflow: hidden;
+        color: white;
+        display: none;
+        justify-content: space-between;
+        background-color: rgb(10, 10, 34);
+    }
+    .controls i{
+        /* border-radius: 10px; */
+        border-right: 1px solid black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        font-size: xx-large;
+        /* padding: 10px; */
+        height: 50px;
+        background-color: rgb(42, 42, 152);
+    }
+
+    @media screen and (max-width:800px) {
+        .wrapper{
+            width: 90vmin;
+            height: 115vmin;
+            margin-bottom: 10px;
+        }
+        .game-details{
+            font-size: 1rem;
+            padding: 15px 27px;
+        }
+        .controls{
+            display: flex;
+        }
+        .controls i{
+            padding: 15px 0;
+            font-size: 1rem;
+        }
+    }
+
+</style>
+
+<body>
+    <h1></h1>
+    <div class="wrapper">
+        <div class="game-details" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">
+            <div style="font-size: larger; margin-top: -5px;">Snake Xenzia 🐍</div>
+            <div class="score">Score : <span class="scoredata"></span></div>
+            <div class="high-score">High Score : <span class="highscoredata"></span></div>
+        </div>
+        <div class="play-board"></div>
+        <div class="controls">
+            <i data-set="ArrowLeft" class="fa-solid fa-arrow-left"></i>
+            <i data-set="ArrowUp" class="fa-solid fa-arrow-up"></i>
+            <i data-set="ArrowDown" class="fa-solid fa-arrow-down"></i>
+            <i data-set="ArrowRight" class="fa-solid fa-arrow-right"></i>
+        </div>
+    </div>
+
+
+    <!-- <div class="food" style="grid-area: ${foodY}/${foodX};"></div> -->
+    <script>
+        const playboard = document.querySelector(".play-board");
+        const score = document.querySelector(".scoredata");
+        const highscore = document.querySelector(".highscoredata");
+        const controls = document.querySelectorAll(".controls i")
+        let snakeBody = [];
+        let gameover = false;
+        let foodX, foodY;
+        let snakeX = 2, snakeY = 2;
+        let VilocityX = 0, VilocityY = 0;
+        let intervalid;
+        let sc;
+        let hs = localStorage.getItem('HighScore') || 0;
+        // console.log(hs)
+        const handelGameover = () => {
+            
+            clearInterval(intervalid)
+            alert("Game Over! Press OK to replay")
+            location.reload();
+            
+        }
+
+        const changeFoodPosistion = () => {
+            foodX = Math.floor(Math.random() * 30) + 1;
+            foodY = Math.floor(Math.random() * 30) + 1;
+        }
+        const changesnakeDirection = (e) => {
+            console.log(e)
+            if (e.key === "ArrowUp" && VilocityY != 1) {
+                VilocityX = 0;
+                VilocityY = -1;
+            } else if (e.key === "ArrowDown" && VilocityY != -1) {
+                VilocityX = 0;
+                VilocityY = 1;
+            } else if (e.key === "ArrowLeft" && VilocityX != 1) {
+                VilocityX = -1;
+                VilocityY = 0;
+            } else if (e.key === "ArrowRight" && VilocityX != -1) {
+                VilocityX = 1;
+                VilocityY = 0;
+            };
+            // initGame();
+        }
+        
+        
+controls.forEach(key =>{
+    key.addEventListener("click", ()=>{changesnakeDirection({key: key.dataset.set})})
+})
+        const initGame = () => {
+            if (gameover) return handelGameover()
+            highscore.innerHTML = hs
+
+            sc = snakeBody.length - 1
+            score.innerHTML = sc;
+            if (sc>hs) {
+                localStorage.setItem("HighScore", sc)
+            }
+            let htmlMarkup = `<div class="food" style="grid-area: ${foodY} / ${foodX}"></div>`;
+
+            if (snakeX === foodX && snakeY === foodY) {
+                changeFoodPosistion()
+                snakeBody.push([foodX, foodY])
+            }
+
+            if (snakeX <= 0 || snakeX > 30 || snakeY <= 0 || snakeY > 30) {
+                gameover = true;
+
+            }
+            for (let i = snakeBody.length - 1; i > 0; i--) {
+                snakeBody[i] = snakeBody[i - 1]
+                console.log(snakeBody)
+
+            }
+            snakeBody[0] = [snakeX, snakeY]
+            snakeX += VilocityX;
+            snakeY += VilocityY;
+            for (let i = 0; i < snakeBody.length; i++) {
+                htmlMarkup += `<div class="head" style="grid-area: ${snakeBody[i][1]} / ${snakeBody[i][0]}"></div>`;
+                if(i !==0 && snakeBody[0][1] === snakeBody[i][1] &&  snakeBody[0][0] === snakeBody[i][0]){
+                    gameover = true
+                }
+            }
+
+            playboard.innerHTML = htmlMarkup;
+        }
+        changeFoodPosistion()
+        intervalid = setInterval(initGame, 125)
+        // initGame()
+        document.addEventListener("keydown", changesnakeDirection)
+    </script>
+</body>
+
+</html
